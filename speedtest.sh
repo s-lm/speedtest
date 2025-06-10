@@ -37,8 +37,8 @@ plot "<(head -n1 ${F_DATA};cat ${F_DATA} | grep ${GREP_DATE})" \
 	   using 7:xtic(4) ti col with lines, \
 	"" using 8:xtic(4) ti col with lines, \
 	"" using 6:xtic(4) ti col with lines axis x1y2, \
-	   100*10**6 ti  "50 MBit/s" with points, \
-	   225*10**6 ti "200 MBit/s" with points, \
-	   250*10**6 ti "200 MBit/s" with points, \
-	   300*10**6 ti "250 MBit/s" with points
+	   100*10**6 ti "100 MBit/s" with points, \
+	   225*10**6 ti "225 MBit/s" with points, \
+	   250*10**6 ti "250 MBit/s" with points, \
+	   300*10**6 ti "300 MBit/s" with points
 EOF
