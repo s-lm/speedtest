@@ -16,8 +16,9 @@ RUN chmod +x /usr/local/bin/speedtest.sh
 COPY crontab /etc/crontabs/root
 
 # Copy nginx config
-COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 RUN mkdir -p /usr/share/nginx/speedtest
+COPY favicon.ico /usr/share/nginx/speedtest
+COPY nginx-default.conf /etc/nginx/conf.d/default.conf
 
 # Start the cron daemon
 CMD ["sh", "-c", "crond && nginx -g 'daemon off;'"]
