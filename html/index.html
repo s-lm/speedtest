@@ -1,17 +1,99 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Speedtest Graph</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <!-- Local Fonts -->
+    <style>
+        @font-face {
+            font-family: 'Inter';
+            src: url('fonts/Inter-Regular.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Inter';
+            src: url('fonts/Inter-Bold.woff2') format('woff2');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        :root {
+            --bg: #ffffff;
+            --fg: #111111;
+            --border: #cccccc;
+            --card: #f5f5f5;
+        }
+
+        .dark {
+            --bg: #121212;
+            --fg: #f0f0f0;
+            --border: #333333;
+            --card: #1e1e1e;
+        }
+
+        body {
+            margin: 2rem;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--fg);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        canvas {
+            background-color: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        select {
+            padding: 0.5rem;
+            margin-top: 1rem;
+            background-color: var(--card);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+        }
+
+        #themeToggle {
+            margin-left: 1rem;
+            padding: 0.4rem 0.8rem;
+            background: var(--card);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+
     <script src="js/chart.umd.js"></script>
     <script src="js/chartjs-adapter-date-fns.bundle.min.js"></script>
 </head>
 <body>
-    <h2>Select Month:</h2>
+    <h2>
+        Select Month:
+        <button id="themeToggle">Toggle Theme</button>
+    </h2>
     <select id="monthSelect"></select>
     <canvas id="speedChart" width="800" height="400"></canvas>
 
     <script>
+        // 🌗 Theme logic (run before anything else)
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const savedTheme = localStorage.getItem('theme');
+        const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+        if (theme === 'dark') document.body.classList.add('dark');
+
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark');
+            const isDark = document.body.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            applyChartTheme(isDark);
+        });
+
         let allPoints = [];
 
         function getMonthKey(dateStr) {
@@ -28,6 +110,75 @@
             speedChart.data.datasets[1].data = uploadData;
             speedChart.data.datasets[2].data = pingData;
             speedChart.update();
+        }
+
+        function createChartOptions(dark) {
+            return {
+                interaction: {
+                    mode: 'nearest',
+                    intersect: false
+                },
+                scales: {
+                    x: {
+                        type: 'time',
+                        time: { unit: 'day' },
+                        ticks: {
+                            color: dark ? '#ccc' : '#111'
+                        },
+                        grid: {
+                            color: dark ? '#444' : '#ccc'
+                        }
+                    },
+                    A: {
+                        type: 'linear',
+                        position: 'left',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Speed (bit/s)',
+                            color: dark ? '#ccc' : '#111'
+                        },
+                        ticks: { color: dark ? '#ccc' : '#111' },
+                        grid: { color: dark ? '#444' : '#ccc' }
+                    },
+                    B: {
+                        type: 'linear',
+                        position: 'right',
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Ping (ms)',
+                            color: dark ? '#ccc' : '#111'
+                        },
+                        ticks: { color: dark ? '#ccc' : '#111' },
+                        grid: { color: dark ? '#444' : '#ccc' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: dark ? '#ccc' : '#111'
+                        }
+                    },
+                    tooltip: {
+                        backgroundColor: dark ? '#222' : '#fff',
+                        titleColor: dark ? '#fff' : '#000',
+                        bodyColor: dark ? '#ddd' : '#000',
+                        callbacks: {
+                            label: function (context) {
+                                const p = context.raw.meta;
+                                return `${context.dataset.label}: ${context.formattedValue}\nSponsor: ${p.sponsor}\nServer: ${p.server}\nDistance: ${p.distance} km\nIP: ${p.ip}`;
+                            }
+                        }
+                    }
+                }
+            };
+        }
+
+        function applyChartTheme(dark) {
+            const chart = window.speedChart;
+            chart.options = createChartOptions(dark);
+            chart.update();
         }
 
         fetch('data/data.csv')
@@ -49,10 +200,7 @@
                     month: getMonthKey(row[3])
                 }));
 
-                // Get unique months and sort descending
                 const months = [...new Set(allPoints.map(p => p.month))].sort().reverse();
-
-                // Populate dropdown
                 const select = document.getElementById('monthSelect');
                 months.forEach(month => {
                     const option = document.createElement('option');
@@ -61,8 +209,9 @@
                     select.appendChild(option);
                 });
 
-                // Set up chart
                 const ctx = document.getElementById('speedChart').getContext('2d');
+                const isDark = document.body.classList.contains('dark');
+
                 window.speedChart = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -72,46 +221,11 @@
                             { label: 'Ping (ms)', data: [], borderColor: 'green', fill: false, yAxisID: 'B' }
                         ]
                     },
-                    options: {
-                        interaction: {
-                            mode: 'nearest',
-                            intersect: false
-                        },
-                        scales: {
-                            x: {
-                                type: 'time',
-                                time: { unit: 'day' }
-                            },
-                            A: {
-                                type: 'linear',
-                                position: 'left',
-                                beginAtZero: true,
-                                title: { display: true, text: 'Speed (bit/s)' }
-                            },
-                            B: {
-                                type: 'linear',
-                                position: 'right',
-                                beginAtZero: true,
-                                title: { display: true, text: 'Ping (ms)' }
-                            }
-                        },
-                        plugins: {
-                            tooltip: {
-                                callbacks: {
-                                    label: function (context) {
-                                        const p = context.raw.meta;
-                                        return `${context.dataset.label}: ${context.formattedValue}\nSponsor: ${p.sponsor}\nServer: ${p.server}\nDistance: ${p.distance} km\nIP: ${p.ip}`;
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    options: createChartOptions(isDark)
                 });
 
-                // Show data for latest month initially
                 updateChart(allPoints.filter(p => p.month === months[0]));
 
-                // Handle selection change
                 select.addEventListener('change', (e) => {
                     const month = e.target.value;
                     const filtered = allPoints.filter(p => p.month === month);
@@ -124,4 +238,3 @@
     </script>
 </body>
 </html>
-
