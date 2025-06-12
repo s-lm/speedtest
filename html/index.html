@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Speedtest Graph</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
 
     <!-- Fonts -->
     <style>
@@ -142,7 +143,7 @@
             return {
                 interaction: {
                     mode: 'nearest',
-                    intersect: false
+                    intersect: true
                 },
                 scales: {
                     x: {
@@ -165,7 +166,10 @@
                             color: dark ? '#ccc' : '#111'
                         },
                         ticks: { color: dark ? '#ccc' : '#111' },
-                        grid: { color: dark ? '#444' : '#ccc' }
+                        grid: { 
+                            drawOnChartArea: true, 
+                            color: dark ? '#444' : '#ccc' 
+                        }
                     },
                     B: {
                         type: 'linear',
@@ -177,7 +181,10 @@
                             color: dark ? '#ccc' : '#111'
                         },
                         ticks: { color: dark ? '#ccc' : '#111' },
-                        grid: { color: dark ? '#444' : '#ccc' }
+                        grid: { 
+                            drawOnChartArea: false, 
+                            color: dark ? '#444' : '#ccc'
+                        }
                     }
                 },
                 plugins: {
