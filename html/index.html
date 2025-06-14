@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Speedtest Graph</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <script src="js/chart.umd.js"></script>
+    <script src="js/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <h2>Select Month:</h2>
+    <select id="monthSelect"></select>
+    <canvas id="speedChart" width="800" height="400"></canvas>
+
+    <script>
+        let allPoints = [];
+
+        function getMonthKey(dateStr) {
+            const date = new Date(dateStr);
+            return date.toISOString().slice(0, 7); // e.g., "2025-06"
+        }
+
+        function updateChart(points) {
+            const downloadData = points.map(p => ({ x: p.timestamp, y: p.download, meta: p }));
+            const uploadData = points.map(p => ({ x: p.timestamp, y: p.upload, meta: p }));
+            const pingData = points.map(p => ({ x: p.timestamp, y: p.ping, meta: p }));
+
+            speedChart.data.datasets[0].data = downloadData;
+            speedChart.data.datasets[1].data = uploadData;
+            speedChart.data.datasets[2].data = pingData;
+            speedChart.update();
+        }
+
+        fetch('data/data.csv')
+            .then(response => response.text())
+            .then(data => {
+                const rows = data.trim().split('\n').map(row => row.split(';'));
+                const headers = rows[0];
+                const dataRows = rows.slice(1);
+
+                allPoints = dataRows.map(row => ({
+                    timestamp: row[3],
+                    ping: parseFloat(row[5]),
+                    download: parseFloat(row[6]),
+                    upload: parseFloat(row[7]),
+                    sponsor: row[1],
+                    server: row[2],
+                    distance: row[4],
+                    ip: row[9],
+                    month: getMonthKey(row[3])
+                }));
+
+                // Get unique months and sort descending
+                const months = [...new Set(allPoints.map(p => p.month))].sort().reverse();
+
+                // Populate dropdown
+                const select = document.getElementById('monthSelect');
+                months.forEach(month => {
+                    const option = document.createElement('option');
+                    option.value = month;
+                    option.textContent = month;
+                    select.appendChild(option);
+                });
+
+                // Set up chart
+                const ctx = document.getElementById('speedChart').getContext('2d');
+                window.speedChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        datasets: [
+                            { label: 'Download Speed (bit/s)', data: [], borderColor: 'blue', fill: false, yAxisID: 'A' },
+                            { label: 'Upload Speed (bit/s)', data: [], borderColor: 'red', fill: false, yAxisID: 'A' },
+                            { label: 'Ping (ms)', data: [], borderColor: 'green', fill: false, yAxisID: 'B' }
+                        ]
+                    },
+                    options: {
+                        interaction: {
+                            mode: 'nearest',
+                            intersect: false
+                        },
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: { unit: 'day' }
+                            },
+                            A: {
+                                type: 'linear',
+                                position: 'left',
+                                beginAtZero: true,
+                                title: { display: true, text: 'Speed (bit/s)' }
+                            },
+                            B: {
+                                type: 'linear',
+                                position: 'right',
+                                beginAtZero: true,
+                                title: { display: true, text: 'Ping (ms)' }
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const p = context.raw.meta;
+                                        return `${context.dataset.label}: ${context.formattedValue}\nSponsor: ${p.sponsor}\nServer: ${p.server}\nDistance: ${p.distance} km\nIP: ${p.ip}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Show data for latest month initially
+                updateChart(allPoints.filter(p => p.month === months[0]));
+
+                // Handle selection change
+                select.addEventListener('change', (e) => {
+                    const month = e.target.value;
+                    const filtered = allPoints.filter(p => p.month === month);
+                    updateChart(filtered);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading CSV:', error);
+            });
+    </script>
+</body>
+</html>
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-BASEPATH=/usr/share/nginx/speedtest
+BASEPATH=/usr/share/nginx/speedtest/data
 F_DATA=${BASEPATH}/data.csv
 F_DATE=$(date -u +%Y%m)
 GREP_DATE=$(date -u +%Y-%m)
