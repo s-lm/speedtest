@@ -20,6 +20,7 @@ RUN mkdir -p /usr/share/nginx/speedtest/data
 COPY html/favicon.ico /usr/share/nginx/speedtest
 COPY html/index.html /usr/share/nginx/speedtest
 COPY html/js /usr/share/nginx/speedtest/js
+COPY html/fonts /usr/share/nginx/speedtest/fonts
 COPY config/nginx-default.conf /etc/nginx/conf.d/default.conf
 
 # Start the cron daemon
