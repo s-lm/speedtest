@@ -1,1 +1,1 @@
-* */6 * * * /usr/local/bin/speedtest.sh
+15 */6 * * * /usr/local/bin/speedtest.sh
